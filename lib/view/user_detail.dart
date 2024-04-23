@@ -18,22 +18,20 @@ class _UserDetailViewState extends State<UserDetailView> {
   }
 
   Widget _buildLoadUser() {
-    return Expanded(
-      child: FutureBuilder(
-        future: UserDataSource.instance.loadUserDetail(widget.id),
-        builder: (
-          BuildContext context,
-          AsyncSnapshot<dynamic> snapshot,
-        ) {
-          if (snapshot.hasError) {
-            return _buildErrorSection();
-          } else if (snapshot.hasData) {
-            UserDetail userModel = UserDetail.fromJson(snapshot.data);
-            return _buildSuccessSection(context, userModel.data!);
-          }
-          return _buildLoadingSection();
-        },
-      ),
+    return FutureBuilder(
+      future: UserDataSource.instance.loadUserDetail(widget.id),
+      builder: (
+        BuildContext context,
+        AsyncSnapshot<dynamic> snapshot,
+      ) {
+        if (snapshot.hasError) {
+          return _buildErrorSection();
+        } else if (snapshot.hasData) {
+          UserDetail userModel = UserDetail.fromJson(snapshot.data);
+          return _buildSuccessSection(context, userModel.data!);
+        }
+        return _buildLoadingSection();
+      },
     );
   }
 
