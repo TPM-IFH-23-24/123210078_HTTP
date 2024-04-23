@@ -6,12 +6,7 @@ class BaseNetwork {
 
   static Future<Map<String, dynamic>> get(String partUrl) async {
     final String fullUrl = "$baseUrl/$partUrl";
-
-    debugPrint("BaseNetwork - fullUrl : $fullUrl");
-
     final response = await http.get(Uri.parse(fullUrl));
-
-    debugPrint("BaseNetwork - response : ${response.body}");
 
     return _processResponse(response);
   }
@@ -27,9 +22,5 @@ class BaseNetwork {
       print("processResponse error");
       return {"error": true};
     }
-  }
-
-  static void debugPrint(String value) {
-    print("[BASE_NETWORK] - $value");
   }
 }

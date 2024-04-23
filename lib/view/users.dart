@@ -30,26 +30,73 @@ class _UsersViewState extends State<UsersView> {
     );
   }
 
+  Future? _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = UserDataSource.instance.loadUsers(widget.page);
+  }
+
+  String keyword = "";
+  List<DataUser> filteredItems = [];
+  List<DataUser> userList = [];
+
+  void _search(String val) {
+    setState(() {
+      keyword = val;
+      filteredItems = userList
+          .where((item) =>
+              (item.firstName!.toLowerCase()).contains(val.toLowerCase()) ||
+              (item.lastName!.toLowerCase()).contains(val.toLowerCase()) ||
+              (item.email!.toLowerCase()).contains(val.toLowerCase()))
+          .toList();
+    });
+  }
+
   Widget _heading(BuildContext context) {
     return Container(
-        padding: const EdgeInsets.only(top: 16, bottom: 12),
+        padding: const EdgeInsets.only(top: 16, bottom: 14),
         alignment: Alignment.centerLeft,
         color: Colors.white,
-        child: const Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               "User List 👨🏻‍🦰👩🏻‍🦰",
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
+            _searchBar(context)
           ],
         ));
+  }
+
+  Widget _searchBar(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      child: TextFormField(
+        enabled: true,
+        onChanged: (value) => _search(value),
+        decoration: InputDecoration(
+          hintText: 'Search user',
+          prefixIcon: const Icon(Icons.search, color: Colors.black87),
+          filled: true,
+          fillColor: const Color.fromARGB(0, 0, 0, 0),
+          contentPadding: const EdgeInsets.all(12),
+          enabledBorder: const OutlineInputBorder(
+              borderSide: BorderSide(width: 1.75, color: Colors.black26)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+              borderSide: const BorderSide(width: 1.75, color: Colors.black26)),
+        ),
+      ),
+    );
   }
 
   Widget _buildDetailUser() {
     return Expanded(
       child: FutureBuilder(
-        future: UserDataSource.instance.loadUsers(widget.page),
+        future: _future,
         builder: (
           BuildContext context,
           AsyncSnapshot<dynamic> snapshot,
@@ -58,7 +105,8 @@ class _UsersViewState extends State<UsersView> {
             return _buildErrorSection();
           } else if (snapshot.hasData) {
             UserListModel userModel = UserListModel.fromJson(snapshot.data);
-            return _buildSuccessSection(userModel);
+            userList = [...?userModel.data];
+            return _buildSuccessSection(context, userModel);
           }
           return _buildLoadingSection();
         },
@@ -70,34 +118,50 @@ class _UsersViewState extends State<UsersView> {
     return const Text("Error");
   }
 
-  Widget _buildEmptySection() {
-    return const Text("Empty");
-  }
-
   Widget _buildLoadingSection() {
     return const Center(
       child: CircularProgressIndicator(),
     );
   }
 
-  Widget _buildSuccessSection(UserListModel data) {
+  Widget _buildSuccessSection(BuildContext context, UserListModel data) {
     return Column(
       children: [
-        Expanded(
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
-            ),
-            itemBuilder: (BuildContext context, int index) {
-              return _buildItemUser(data.data![index]);
-            },
-            itemCount: data.data?.length,
-          ),
-        ),
+        (keyword != "" && filteredItems.isEmpty)
+            ? Container(
+                margin: const EdgeInsets.only(top: 12),
+                child: Text.rich(
+                  TextSpan(
+                    style: const TextStyle(fontSize: 16),
+                    children: [
+                      const TextSpan(text: "Can't find "),
+                      TextSpan(
+                          text: keyword,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const TextSpan(text: " on menu."),
+                    ],
+                  ),
+                ))
+            : Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                  ),
+                  itemCount:
+                      (keyword != "") ? filteredItems.length : userList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return _buildItemUser(
+                        context,
+                        (keyword != "")
+                            ? filteredItems[index]
+                            : userList[index]);
+                  },
+                ),
+              ),
         Container(
-          padding: EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           color: Colors.white,
           child: Row(
             children: [
@@ -156,7 +220,7 @@ class _UsersViewState extends State<UsersView> {
     );
   }
 
-  Widget _buildItemUser(DataUser user) {
+  Widget _buildItemUser(BuildContext context, DataUser user) {
     return InkWell(
       onTap: () {
         Navigator.push(
