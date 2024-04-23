@@ -4,7 +4,9 @@ import 'package:prak_tpm_http/model/users.dart';
 import 'package:prak_tpm_http/view/user_detail.dart';
 
 class UsersView extends StatefulWidget {
-  const UsersView({super.key});
+  final int page;
+
+  const UsersView({super.key, this.page = 1});
 
   @override
   State<UsersView> createState() => _UsersViewState();
@@ -47,7 +49,7 @@ class _UsersViewState extends State<UsersView> {
   Widget _buildDetailUser() {
     return Expanded(
       child: FutureBuilder(
-        future: UserDataSource.instance.loadUsers(),
+        future: UserDataSource.instance.loadUsers(widget.page),
         builder: (
           BuildContext context,
           AsyncSnapshot<dynamic> snapshot,
@@ -79,16 +81,78 @@ class _UsersViewState extends State<UsersView> {
   }
 
   Widget _buildSuccessSection(UserListModel data) {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-      ),
-      itemBuilder: (BuildContext context, int index) {
-        return _buildItemUser(data.data![index]);
-      },
-      itemCount: data.data?.length,
+    return Column(
+      children: [
+        Expanded(
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+            ),
+            itemBuilder: (BuildContext context, int index) {
+              return _buildItemUser(data.data![index]);
+            },
+            itemCount: data.data?.length,
+          ),
+        ),
+        Container(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          color: Colors.white,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: data.page! <= 1
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  UsersView(page: data.page! - 1),
+                            ),
+                          );
+                        },
+                  style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor:
+                          data.page! <= 1 ? Colors.black12 : Colors.black,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6))),
+                  child: const Text("Previous"),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text("Page ${data.page}"),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextButton(
+                  onPressed: data.page! >= data.totalPages!
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  UsersView(page: data.page! + 1),
+                            ),
+                          );
+                        },
+                  style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: data.page! >= data.totalPages!
+                          ? Colors.black12
+                          : Colors.black,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6))),
+                  child: const Text("Next"),
+                ),
+              ),
+            ],
+          ),
+        )
+      ],
     );
   }
 
